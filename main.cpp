@@ -14,14 +14,28 @@ typedef void  (*TickInput_t)(void* self);
 typedef Font* (*GetFont_t)(void* client);
 typedef void  (*DrawString_t)(void* sr, Font* f, const std::string& t, int x, int y, const Color& c);
 
+static const char* LOG_PATHS[] = {
+    "/sdcard/games/com.mojang/minecraftpe/legendpro_log.txt",
+    "/sdcard/legendpro_log.txt",
+    "/sdcard/Android/data/com.mojang.LegendPro/files/legendpro_log.txt",
+    "/data/data/com.mojang.LegendPro/legendpro_log.txt"
+};
+static const char* STAGE_PATHS[] = {
+    "/sdcard/games/com.mojang/minecraftpe/legendpro_stage.txt",
+    "/sdcard/legendpro_stage.txt",
+    "/sdcard/Android/data/com.mojang.LegendPro/files/legendpro_stage.txt"
+};
+
 static void L(const char* fmt, ...) {
     char buf[256];
     va_list ap; va_start(ap, fmt);
     vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
     __android_log_print(ANDROID_LOG_INFO, "LegendProMod", "%s", buf);
-    FILE* f = fopen("/sdcard/legendpro_log.txt", "a");
-    if (f) { fprintf(f, "%s\n", buf); fclose(f); }
+    for (int i = 0; i < 4; i++) {
+        FILE* f = fopen(LOG_PATHS[i], "a");
+        if (f) { fprintf(f, "%s\n", buf); fclose(f); }
+    }
 }
 
 static int g_stage = 0;
@@ -57,8 +71,10 @@ static void hook_render(void* self, float partial) {
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM*, void*) {
     L("JNI_OnLoad start");
-    FILE* sf = fopen("/sdcard/legendpro_stage.txt", "r");
-    if (sf) { int c = fgetc(sf); if (c >= '0' && c <= '3') g_stage = c - '0'; fclose(sf); }
+    for (int i = 0; i < 3; i++) {
+        FILE* sf = fopen(STAGE_PATHS[i], "r");
+        if (sf) { int c = fgetc(sf); if (c >= '0' && c <= '3') g_stage = c - '0'; fclose(sf); break; }
+    }
     L("stage=%d", g_stage);
     void* mc = dlopen("libminecraftpe.so", RTLD_LAZY);
     if (!mc) { L("dlopen minecraftpe failed"); return JNI_VERSION_1_4; }
