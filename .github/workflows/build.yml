@@ -1,1 +1,44 @@
 
+name: MCPE 0.15.10 FPS Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ARMv7 FPS Extension
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android NDK
+        run: sdkmanager "ndk;25.2.9519653"
+
+      - name: Build Native Library
+        run: |
+          export ANDROID_NDK_HOME="$ANDROID_SDK_ROOT/ndk/25.2.9519653"
+          "$ANDROID_NDK_HOME/ndk-build" \
+            NDK_PROJECT_PATH=. \
+            APP_BUILD_SCRIPT=Android.mk \
+            NDK_APPLICATION_MK=Application.mk \
+            NDK_OUT=build/obj \
+            NDK_LIBS_OUT=build/libs
+
+      - name: Upload SO Library
+        uses: actions/upload-artifact@v4
+        with:
+          name: MCPE-01510-FPS-ARMv7
+          path: build/libs/**/*.so
+          if-no-files-found: error
+
