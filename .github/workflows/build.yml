@@ -12,22 +12,30 @@ permissions:
 
 jobs:
   build:
-    name: Build ARMv7 FPS Extension
     runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout source
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android NDK
-        run: sdkmanager "ndk;25.2.9519653"
-
-      - name: Build Native Library
+      - name: Setup Android NDK
+        shell: bash
         run: |
-          export ANDROID_NDK_HOME="$ANDROID_SDK_ROOT/ndk/25.2.9519653"
+          set -e
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          SDKMANAGER="$(command -v sdkmanager || find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -n 1)"
+          if [ ! -x "$SDKMANAGER" ]; then
+            echo "sdkmanager not found"
+            exit 1
+          fi
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" "ndk;25.2.9519653"
+
+      - name: Build ARMv7
+        shell: bash
+        run: |
+          set -e
+          export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/25.2.9519653"
           "$ANDROID_NDK_HOME/ndk-build" \
             NDK_PROJECT_PATH=. \
             APP_BUILD_SCRIPT=Android.mk \
@@ -35,10 +43,10 @@ jobs:
             NDK_OUT=build/obj \
             NDK_LIBS_OUT=build/libs
 
-      - name: Upload SO Library
+      - name: Upload Library
         uses: actions/upload-artifact@v4
         with:
-          name: MCPE-01510-FPS-ARMv7
+          name: MCPE-FPS-ARMv7
           path: build/libs/**/*.so
           if-no-files-found: error
 
