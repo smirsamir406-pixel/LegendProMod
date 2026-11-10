@@ -17,16 +17,20 @@ jobs:
         with:
           ndk-version: r21e
 
+      - name: Get Dobby
+        run: git clone --depth 1 https://github.com/jmpews/Dobby third_party/Dobby
+
       - name: Build
         run: |
           cmake -S . -B build \
             -DCMAKE_TOOLCHAIN_FILE=${{ steps.ndk.outputs.ndk-path }}/build/cmake/android.toolchain.cmake \
             -DANDROID_ABI=armeabi-v7a \
-            -DANDROID_PLATFORM=android-21
+            -DANDROID_PLATFORM=android-21 \
+            -DCMAKE_BUILD_TYPE=Release
           cmake --build build
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: libclient
-          path: build/**/*.so
+          path: build/libclient.so
